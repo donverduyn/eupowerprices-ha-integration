@@ -155,6 +155,13 @@ with the API key redacted — useful when filing an issue.
 Issues and PRs welcome. Please run `pytest` (see `requirements_test.txt`)
 before submitting.
 
+## Release Workflow
+
+To make HACS pick up new versions cleanly, bump the `version` field in
+`custom_components/eu_power_prices/manifest.json`, push the change, then tag
+the release as `vX.Y.Z`. The release workflow in `.github/workflows/release.yaml`
+turns that tag into a GitHub Release, which HACS uses to show versioned updates.
+
 ## License
 
 MIT — see `LICENSE`.
