@@ -57,8 +57,7 @@ delete and re-add it.
 ### Options
 
 Settings → Devices & Services → EU Power Prices → **Configure** lets you
-change the polling interval (15–180 minutes, default 60 — matches how often
-the upstream API regenerates its forecast).
+change the polling interval (20–10800 seconds, default 3600).
 
 ## Example: charting the forecast
 

@@ -12,8 +12,9 @@ from homeassistant.helpers.aiohttp_client import async_get_clientsession
 from .api import EuPowerPricesApiClient
 from .const import (
     CONF_AREA,
+    CONF_SCAN_INTERVAL_SECONDS,
     CONF_SCAN_INTERVAL_MINUTES,
-    DEFAULT_SCAN_INTERVAL_MINUTES,
+    DEFAULT_SCAN_INTERVAL_SECONDS,
 )
 from .coordinator import EuPowerPricesCoordinator
 
@@ -22,6 +23,17 @@ _LOGGER = logging.getLogger(__name__)
 PLATFORMS: list[Platform] = [Platform.SENSOR]
 
 type EuPowerPricesConfigEntry = ConfigEntry[EuPowerPricesCoordinator]
+
+
+def _resolve_update_interval_seconds(entry: EuPowerPricesConfigEntry) -> int:
+    """Resolve polling interval in seconds with legacy minutes fallback."""
+    if CONF_SCAN_INTERVAL_SECONDS in entry.options:
+        return int(entry.options[CONF_SCAN_INTERVAL_SECONDS])
+
+    if CONF_SCAN_INTERVAL_MINUTES in entry.options:
+        return int(entry.options[CONF_SCAN_INTERVAL_MINUTES]) * 60
+
+    return DEFAULT_SCAN_INTERVAL_SECONDS
 
 
 async def async_setup_entry(hass: HomeAssistant, entry: EuPowerPricesConfigEntry) -> bool:
@@ -33,15 +45,13 @@ async def async_setup_entry(hass: HomeAssistant, entry: EuPowerPricesConfigEntry
         area=entry.data[CONF_AREA],
     )
 
-    update_interval_minutes = entry.options.get(
-        CONF_SCAN_INTERVAL_MINUTES, DEFAULT_SCAN_INTERVAL_MINUTES
-    )
+    update_interval_seconds = _resolve_update_interval_seconds(entry)
 
     coordinator = EuPowerPricesCoordinator(
         hass=hass,
         config_entry=entry,
         client=client,
-        update_interval_minutes=update_interval_minutes,
+        update_interval_seconds=update_interval_seconds,
     )
     await coordinator.async_config_entry_first_refresh()
 

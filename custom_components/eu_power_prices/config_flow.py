@@ -36,12 +36,13 @@ from .api import (
 )
 from .const import (
     CONF_AREA,
+    CONF_SCAN_INTERVAL_SECONDS,
     CONF_SCAN_INTERVAL_MINUTES,
-    DEFAULT_SCAN_INTERVAL_MINUTES,
+    DEFAULT_SCAN_INTERVAL_SECONDS,
     DOMAIN,
     KNOWN_AREAS,
-    MAX_SCAN_INTERVAL_MINUTES,
-    MIN_SCAN_INTERVAL_MINUTES,
+    MAX_SCAN_INTERVAL_SECONDS,
+    MIN_SCAN_INTERVAL_SECONDS,
 )
 
 _LOGGER = logging.getLogger(__name__)
@@ -182,18 +183,22 @@ class EuPowerPricesOptionsFlow(OptionsFlow):
         if user_input is not None:
             return self.async_create_entry(data=user_input)
 
-        current = self.config_entry.options.get(
-            CONF_SCAN_INTERVAL_MINUTES, DEFAULT_SCAN_INTERVAL_MINUTES
-        )
+        current = self.config_entry.options.get(CONF_SCAN_INTERVAL_SECONDS)
+        if current is None:
+            legacy_minutes = self.config_entry.options.get(CONF_SCAN_INTERVAL_MINUTES)
+            if legacy_minutes is not None:
+                current = int(legacy_minutes) * 60
+            else:
+                current = DEFAULT_SCAN_INTERVAL_SECONDS
 
         schema = vol.Schema(
             {
                 vol.Required(
-                    CONF_SCAN_INTERVAL_MINUTES, default=current
+                    CONF_SCAN_INTERVAL_SECONDS, default=current
                 ): NumberSelector(
                     NumberSelectorConfig(
-                        min=MIN_SCAN_INTERVAL_MINUTES,
-                        max=MAX_SCAN_INTERVAL_MINUTES,
+                        min=MIN_SCAN_INTERVAL_SECONDS,
+                        max=MAX_SCAN_INTERVAL_SECONDS,
                         step=5,
                         mode=NumberSelectorMode.BOX,
                     )

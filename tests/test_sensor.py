@@ -27,7 +27,7 @@ from custom_components.eu_power_prices.api import (
 )
 from custom_components.eu_power_prices.const import (
     CONF_AREA,
-    CONF_SCAN_INTERVAL_MINUTES,
+    CONF_SCAN_INTERVAL_SECONDS,
     DOMAIN,
 )
 
@@ -287,10 +287,10 @@ async def test_options_listener_reloads_entry(hass):
 
     with patch(_VALIDATE_TARGET, return_value=data):
         hass.config_entries.async_update_entry(
-            entry, options={CONF_SCAN_INTERVAL_MINUTES: 30}
+            entry, options={CONF_SCAN_INTERVAL_SECONDS: 30}
         )
         await hass.async_block_till_done()
 
     new_coordinator = entry.runtime_data
     assert new_coordinator is not original_coordinator
-    assert new_coordinator.update_interval.total_seconds() == 30 * 60
+    assert new_coordinator.update_interval.total_seconds() == 30

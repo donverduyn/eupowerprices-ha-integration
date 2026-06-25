@@ -19,7 +19,11 @@ from custom_components.eu_power_prices.api import (
     EuPowerPricesAuthError,
     EuPowerPricesConnectionError,
 )
-from custom_components.eu_power_prices.const import CONF_AREA, CONF_SCAN_INTERVAL_MINUTES, DOMAIN
+from custom_components.eu_power_prices.const import (
+    CONF_AREA,
+    CONF_SCAN_INTERVAL_SECONDS,
+    DOMAIN,
+)
 
 _VALIDATE_TARGET = (
     "custom_components.eu_power_prices.api.EuPowerPricesApiClient"
@@ -152,11 +156,11 @@ async def test_options_flow_updates_interval(hass, mock_config_entry):
     assert result["step_id"] == "init"
 
     result = await hass.config_entries.options.async_configure(
-        result["flow_id"], {CONF_SCAN_INTERVAL_MINUTES: 30}
+        result["flow_id"], {CONF_SCAN_INTERVAL_SECONDS: 30}
     )
 
     assert result["type"] is FlowResultType.CREATE_ENTRY
-    assert result["data"] == {CONF_SCAN_INTERVAL_MINUTES: 30}
+    assert result["data"] == {CONF_SCAN_INTERVAL_SECONDS: 30}
 
 
 async def test_reauth_flow_invalid_key(hass, mock_config_entry):

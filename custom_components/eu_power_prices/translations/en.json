@@ -38,7 +38,7 @@
       "init": {
         "title": "EU Power Prices options",
         "data": {
-          "scan_interval_minutes": "Polling interval (minutes)"
+          "scan_interval_seconds": "Polling interval (seconds)"
         }
       }
     }
@@ -47,6 +47,18 @@
     "sensor": {
       "current_price": {
         "name": "Current price"
+      },
+      "today_min_price": {
+        "name": "Today's lowest price"
+      },
+      "today_max_price": {
+        "name": "Today's highest price"
+      },
+      "next_cheapest_hour": {
+        "name": "Next cheapest hour"
+      },
+      "cheapest_forecast_hour": {
+        "name": "Cheapest forecast hour"
       }
     }
   }

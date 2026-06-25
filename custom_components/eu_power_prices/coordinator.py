@@ -40,14 +40,14 @@ class EuPowerPricesCoordinator(DataUpdateCoordinator[EuPowerPricesData]):
         hass: HomeAssistant,
         config_entry: ConfigEntry,
         client: EuPowerPricesApiClient,
-        update_interval_minutes: int,
+        update_interval_seconds: int,
     ) -> None:
         super().__init__(
             hass,
             _LOGGER,
             config_entry=config_entry,
             name=f"{DOMAIN}_{client.area}",
-            update_interval=timedelta(minutes=update_interval_minutes),
+            update_interval=timedelta(seconds=update_interval_seconds),
         )
         self.client = client
         self.consecutive_failures = 0

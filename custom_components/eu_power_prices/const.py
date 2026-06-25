@@ -5,11 +5,15 @@ from __future__ import annotations
 DOMAIN = "eu_power_prices"
 
 CONF_AREA = "area"
+CONF_SCAN_INTERVAL_SECONDS = "scan_interval_seconds"
 CONF_SCAN_INTERVAL_MINUTES = "scan_interval_minutes"
 
+DEFAULT_SCAN_INTERVAL_SECONDS = 3600
+MIN_SCAN_INTERVAL_SECONDS = 20
+MAX_SCAN_INTERVAL_SECONDS = 10800
+
+# Backward-compatible fallback for existing options stored in minutes.
 DEFAULT_SCAN_INTERVAL_MINUTES = 60
-MIN_SCAN_INTERVAL_MINUTES = 15
-MAX_SCAN_INTERVAL_MINUTES = 180
 
 API_BASE_URL = "https://api.eupowerprices.com"
 API_FORECAST_PATH = "/v1/forecasts/{area}/latest"
@@ -22,7 +26,7 @@ FORECAST_ATTR_HOURS = 240
 
 # Number of successful fetch snapshots to retain for charting multiple lines
 # over time. Each snapshot contains one future forecast series.
-FORECAST_HISTORY_MAX_SNAPSHOTS = 24
+FORECAST_HISTORY_MAX_SNAPSHOTS = 3
 
 # Known ENTSO-E style bidding-zone codes offered in the config flow dropdown.
 # Not exhaustive (see requirements doc §4.1 - no confirmed /v1/areas endpoint
