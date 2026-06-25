@@ -16,8 +16,9 @@ from .api import (
     EuPowerPricesAuthError,
     EuPowerPricesConnectionError,
     EuPowerPricesData,
+    PricePoint,
 )
-from .const import DOMAIN
+from .const import DOMAIN, FORECAST_HISTORY_MAX_SNAPSHOTS
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -50,6 +51,7 @@ class EuPowerPricesCoordinator(DataUpdateCoordinator[EuPowerPricesData]):
         )
         self.client = client
         self.consecutive_failures = 0
+        self.forecast_history: list[dict[str, object]] = []
 
     @property
     def is_available(self) -> bool:
@@ -83,4 +85,28 @@ class EuPowerPricesCoordinator(DataUpdateCoordinator[EuPowerPricesData]):
             raise UpdateFailed(str(err)) from err
         else:
             self.consecutive_failures = 0
+            self._append_forecast_history(data)
             return data
+
+    def _append_forecast_history(self, data: EuPowerPricesData) -> None:
+        """Keep a bounded list of forecast snapshots for chart overlays."""
+        self.forecast_history.append(self._build_forecast_snapshot(data))
+        self.forecast_history = self.forecast_history[-FORECAST_HISTORY_MAX_SNAPSHOTS:]
+
+    @staticmethod
+    def _build_forecast_snapshot(data: EuPowerPricesData) -> dict[str, object]:
+        """Convert one forecast payload into a serializable chart snapshot."""
+        return {
+            "generated_at": data.generated_at.isoformat(),
+            "area": data.area,
+            "timezone": data.timezone,
+            "currency": data.currency,
+            "series": [
+                {
+                    "ts_local": point.ts_local.isoformat(),
+                    "ts_utc": point.ts_utc.isoformat(),
+                    "price": point.price_eur_mwh,
+                }
+                for point in data.series
+            ],
+        }

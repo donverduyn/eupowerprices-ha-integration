@@ -17,8 +17,12 @@ HEADER_API_KEY = "X-API-Key"
 TIMEOUT_SECONDS = 15
 
 # Hours of forward-looking data exposed via the `forecast` attribute on the
-# current-price sensor. The API returns ~16 days; we trim it for state size.
-FORECAST_ATTR_HOURS = 48
+# sensor. The API returns ~16 days; we keep the first 10 days for charting.
+FORECAST_ATTR_HOURS = 240
+
+# Number of successful fetch snapshots to retain for charting multiple lines
+# over time. Each snapshot contains one future forecast series.
+FORECAST_HISTORY_MAX_SNAPSHOTS = 24
 
 # Known ENTSO-E style bidding-zone codes offered in the config flow dropdown.
 # Not exhaustive (see requirements doc §4.1 - no confirmed /v1/areas endpoint

@@ -139,3 +139,56 @@ async def test_bad_json_raises_connection_error():
 
     with pytest.raises(EuPowerPricesConnectionError):
         await client.async_get_latest_forecast()
+
+
+class _FakeContextThatRaises:
+    """A session.get() return value whose __aenter__ raises immediately."""
+
+    def __init__(self, exc: BaseException) -> None:
+        self._exc = exc
+
+    async def __aenter__(self):
+        raise self._exc
+
+    async def __aexit__(self, *exc_info):
+        return False
+
+
+class _FakeSessionThatRaises:
+    """An aiohttp session stub that raises on every GET."""
+
+    def __init__(self, exc: BaseException) -> None:
+        self._exc = exc
+
+    def get(self, url, headers=None):
+        return _FakeContextThatRaises(self._exc)
+
+
+@pytest.mark.asyncio
+async def test_timeout_raises_connection_error():
+    """A TimeoutError from the network layer maps to EuPowerPricesConnectionError."""
+    import aiohttp
+
+    client = EuPowerPricesApiClient(
+        session=_FakeSessionThatRaises(TimeoutError()),
+        api_key="key",
+        area="NL",
+    )
+
+    with pytest.raises(EuPowerPricesConnectionError, match="Timed out"):
+        await client.async_get_latest_forecast()
+
+
+@pytest.mark.asyncio
+async def test_aiohttp_client_error_raises_connection_error():
+    """A low-level aiohttp error maps to EuPowerPricesConnectionError."""
+    import aiohttp
+
+    client = EuPowerPricesApiClient(
+        session=_FakeSessionThatRaises(aiohttp.ClientError("connection refused")),
+        api_key="key",
+        area="NL",
+    )
+
+    with pytest.raises(EuPowerPricesConnectionError, match="Connection error"):
+        await client.async_get_latest_forecast()

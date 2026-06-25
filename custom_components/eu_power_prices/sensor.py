@@ -70,13 +70,13 @@ class EuPowerPricesCurrentPriceSensor(
 
     @property
     def native_value(self) -> float | None:
-        """Return the price for the current hour, or None if not found."""
+        """Return the next forecasted price at or after the current hour."""
         point = self._current_point()
         return point.price_eur_mwh if point else None
 
     @property
     def extra_state_attributes(self) -> dict[str, object]:
-        """Expose a trimmed forward-looking forecast plus payload metadata."""
+        """Expose the latest forecast plus a bounded snapshot history."""
         data: EuPowerPricesData | None = self.coordinator.data
         if data is None:
             return {}
@@ -90,19 +90,20 @@ class EuPowerPricesCurrentPriceSensor(
 
         return {
             "forecast": forecast,
+            "forecast_history": self.coordinator.forecast_history,
             "generated_at": data.generated_at.isoformat(),
             "currency": data.currency,
             "area": data.area,
         }
 
     def _current_point(self) -> PricePoint | None:
-        """Find the series entry matching the current UTC hour, if any."""
+        """Find the first forecast point at or after the current UTC hour."""
         data: EuPowerPricesData | None = self.coordinator.data
         if data is None:
             return None
 
         now_hour = _current_hour_utc()
         for point in data.series:
-            if point.ts_utc == now_hour:
+            if point.ts_utc >= now_hour:
                 return point
         return None

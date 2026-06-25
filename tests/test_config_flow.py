@@ -159,6 +159,30 @@ async def test_options_flow_updates_interval(hass, mock_config_entry):
     assert result["data"] == {CONF_SCAN_INTERVAL_MINUTES: 30}
 
 
+async def test_reauth_flow_invalid_key(hass, mock_config_entry):
+    """A bad replacement key stays on the reauth_confirm form with an error."""
+    mock_config_entry.add_to_hass(hass)
+
+    result = await hass.config_entries.flow.async_init(
+        DOMAIN,
+        context={
+            "source": config_entries.SOURCE_REAUTH,
+            "entry_id": mock_config_entry.entry_id,
+        },
+        data=mock_config_entry.data,
+    )
+    assert result["step_id"] == "reauth_confirm"
+
+    with patch(_VALIDATE_TARGET, side_effect=EuPowerPricesAuthError):
+        result = await hass.config_entries.flow.async_configure(
+            result["flow_id"], {CONF_API_KEY: "wrong-key"}
+        )
+
+    assert result["type"] is FlowResultType.FORM
+    assert result["step_id"] == "reauth_confirm"
+    assert result["errors"] == {"base": "invalid_auth"}
+
+
 async def test_reauth_flow_success(hass, mock_config_entry):
     """A successful reauth updates the stored API key and keeps the area."""
     mock_config_entry.add_to_hass(hass)
