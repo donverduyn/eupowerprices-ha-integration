@@ -1,0 +1,12 @@
+{
+  "domain": "eu_power_prices",
+  "name": "EU Power Prices",
+  "codeowners": ["@your-github-username"],
+  "config_flow": true,
+  "documentation": "https://github.com/your-github-username/ha-eu-power-prices",
+  "iot_class": "cloud_polling",
+  "integration_type": "service",
+  "issue_tracker": "https://github.com/your-github-username/ha-eu-power-prices/issues",
+  "requirements": [],
+  "version": "0.1.0"
+}

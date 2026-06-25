@@ -1,0 +1,53 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "EU Power Prices",
+        "description": "Enter your EU Power Prices API key. You'll choose a market area next.",
+        "data": {
+          "api_key": "API key"
+        }
+      },
+      "area": {
+        "title": "Select market area",
+        "description": "Choose the bidding zone to track. If yours isn't listed, type the code directly.",
+        "data": {
+          "area": "Area"
+        }
+      },
+      "reauth_confirm": {
+        "title": "Reauthenticate EU Power Prices",
+        "description": "Your API key was rejected. Enter a new one to keep this area working.",
+        "data": {
+          "api_key": "API key"
+        }
+      }
+    },
+    "error": {
+      "invalid_auth": "Invalid API key.",
+      "invalid_area": "That area code wasn't recognized by the API.",
+      "cannot_connect": "Couldn't reach the EU Power Prices API. Please try again."
+    },
+    "abort": {
+      "already_configured": "This area is already configured.",
+      "reauth_successful": "Re-authentication was successful."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "EU Power Prices options",
+        "data": {
+          "scan_interval_minutes": "Polling interval (minutes)"
+        }
+      }
+    }
+  },
+  "entity": {
+    "sensor": {
+      "current_price": {
+        "name": "Current price"
+      }
+    }
+  }
+}
