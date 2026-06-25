@@ -1,0 +1,1 @@
+"""EU Power Prices integration."""

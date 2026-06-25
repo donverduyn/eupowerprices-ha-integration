@@ -1,0 +1,12 @@
+{
+  "domain": "eupowerprices",
+  "name": "EU Power Prices",
+  "version": "1.0.0",
+  "config_flow": true,
+  "documentation": "https://github.com/donverduyn/eupowerprices-ha-integration",
+  "requirements": [],
+  "codeowners": [
+    "@donverduyn"
+  ],
+  "iot_class": "cloud_polling"
+}
