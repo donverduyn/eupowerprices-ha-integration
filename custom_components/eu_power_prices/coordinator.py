@@ -8,6 +8,7 @@ from datetime import timedelta
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import ConfigEntryAuthFailed
+from homeassistant.helpers.storage import Store
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
 
 from .api import (
@@ -34,6 +35,7 @@ class EuPowerPricesCoordinator(DataUpdateCoordinator[EuPowerPricesData]):
     # this counter plus `is_available` below is what actually delivers
     # that behavior (requirements §3 / §6.3).
     MAX_CONSECUTIVE_FAILURES = 3
+    _STORE_VERSION = 1
 
     def __init__(
         self,
@@ -52,6 +54,24 @@ class EuPowerPricesCoordinator(DataUpdateCoordinator[EuPowerPricesData]):
         self.client = client
         self.consecutive_failures = 0
         self.forecast_history: list[dict[str, object]] = []
+        self._history_store = Store[dict[str, object]](
+            hass,
+            self._STORE_VERSION,
+            f"{DOMAIN}_{config_entry.entry_id}_forecast_history",
+        )
+
+    async def async_load_forecast_history(self) -> None:
+        """Restore forecast history from persistent storage."""
+        stored = await self._history_store.async_load()
+        if not isinstance(stored, dict):
+            return
+
+        history = stored.get("forecast_history")
+        if not isinstance(history, list):
+            return
+
+        snapshots = [item for item in history if isinstance(item, dict)]
+        self.forecast_history = snapshots[-FORECAST_HISTORY_MAX_SNAPSHOTS:]
 
     @property
     def is_available(self) -> bool:
@@ -85,13 +105,22 @@ class EuPowerPricesCoordinator(DataUpdateCoordinator[EuPowerPricesData]):
             raise UpdateFailed(str(err)) from err
         else:
             self.consecutive_failures = 0
-            self._append_forecast_history(data)
+            await self._append_forecast_history(data)
             return data
 
-    def _append_forecast_history(self, data: EuPowerPricesData) -> None:
+    async def _append_forecast_history(self, data: EuPowerPricesData) -> None:
         """Keep a bounded list of forecast snapshots for chart overlays."""
-        self.forecast_history.append(self._build_forecast_snapshot(data))
+        snapshot = self._build_forecast_snapshot(data)
+        if (
+            self.forecast_history
+            and self.forecast_history[-1].get("generated_at") == snapshot["generated_at"]
+        ):
+            self.forecast_history[-1] = snapshot
+        else:
+            self.forecast_history.append(snapshot)
+
         self.forecast_history = self.forecast_history[-FORECAST_HISTORY_MAX_SNAPSHOTS:]
+        await self._history_store.async_save({"forecast_history": self.forecast_history})
 
     @staticmethod
     def _build_forecast_snapshot(data: EuPowerPricesData) -> dict[str, object]:

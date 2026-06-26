@@ -29,6 +29,7 @@ from custom_components.eu_power_prices.const import (
     CONF_AREA,
     CONF_SCAN_INTERVAL_SECONDS,
     DOMAIN,
+    FORECAST_HISTORY_MAX_SNAPSHOTS,
 )
 
 _VALIDATE_TARGET = (
@@ -201,6 +202,128 @@ async def test_sensor_appends_forecast_history_on_each_successful_refresh(hass):
     assert len(history) == 2
     assert history[0]["generated_at"] == first.generated_at.isoformat()
     assert history[1]["generated_at"] == second.generated_at.isoformat()
+
+
+async def test_forecast_history_is_bounded_to_max_snapshots(hass):
+    """History keeps only the newest configured number of snapshots."""
+    first = _build_sample_data()
+
+    entry = MockConfigEntry(
+        domain=DOMAIN,
+        unique_id="NL",
+        data={CONF_API_KEY: "key", CONF_AREA: "NL"},
+    )
+    entry.add_to_hass(hass)
+
+    with patch(_VALIDATE_TARGET, return_value=first):
+        assert await hass.config_entries.async_setup(entry.entry_id)
+        await hass.async_block_till_done()
+
+    coordinator = entry.runtime_data
+    updates = [
+        EuPowerPricesData(
+            area="NL",
+            timezone="Europe/Amsterdam",
+            currency="EUR",
+            unit="EUR/MWh",
+            generated_at=first.generated_at + timedelta(hours=idx),
+            series=[
+                PricePoint(
+                    ts_utc=point.ts_utc,
+                    ts_local=point.ts_local,
+                    price_eur_mwh=point.price_eur_mwh + float(idx),
+                )
+                for point in first.series
+            ],
+        )
+        for idx in range(1, FORECAST_HISTORY_MAX_SNAPSHOTS + 2)
+    ]
+
+    for update in updates:
+        with patch(_VALIDATE_TARGET, return_value=update):
+            await coordinator.async_refresh()
+            await hass.async_block_till_done()
+
+    state = hass.states.get(
+        er.async_get(hass).async_get_entity_id("sensor", DOMAIN, f"{DOMAIN}_NL_current_price")
+    )
+    history = state.attributes["forecast_history"]
+
+    assert len(history) == FORECAST_HISTORY_MAX_SNAPSHOTS
+    expected_first = (first.generated_at + timedelta(hours=2)).isoformat()
+    expected_last = (
+        first.generated_at + timedelta(hours=FORECAST_HISTORY_MAX_SNAPSHOTS + 1)
+    ).isoformat()
+    assert history[0]["generated_at"] == expected_first
+    assert history[-1]["generated_at"] == expected_last
+
+
+async def test_forecast_history_restores_after_reload(hass):
+    """Stored history survives unload/setup so chart overlays persist after restart."""
+    first = _build_sample_data()
+    second = EuPowerPricesData(
+        area="NL",
+        timezone="Europe/Amsterdam",
+        currency="EUR",
+        unit="EUR/MWh",
+        generated_at=first.generated_at + timedelta(hours=1),
+        series=[
+            PricePoint(
+                ts_utc=point.ts_utc,
+                ts_local=point.ts_local,
+                price_eur_mwh=point.price_eur_mwh + 1.0,
+            )
+            for point in first.series
+        ],
+    )
+    third = EuPowerPricesData(
+        area="NL",
+        timezone="Europe/Amsterdam",
+        currency="EUR",
+        unit="EUR/MWh",
+        generated_at=first.generated_at + timedelta(hours=2),
+        series=[
+            PricePoint(
+                ts_utc=point.ts_utc,
+                ts_local=point.ts_local,
+                price_eur_mwh=point.price_eur_mwh + 2.0,
+            )
+            for point in first.series
+        ],
+    )
+
+    entry = MockConfigEntry(
+        domain=DOMAIN,
+        unique_id="NL",
+        data={CONF_API_KEY: "key", CONF_AREA: "NL"},
+    )
+    entry.add_to_hass(hass)
+
+    with patch(_VALIDATE_TARGET, return_value=first):
+        assert await hass.config_entries.async_setup(entry.entry_id)
+        await hass.async_block_till_done()
+
+    coordinator = entry.runtime_data
+    with patch(_VALIDATE_TARGET, return_value=second):
+        await coordinator.async_refresh()
+        await hass.async_block_till_done()
+
+    assert await hass.config_entries.async_unload(entry.entry_id)
+    await hass.async_block_till_done()
+
+    with patch(_VALIDATE_TARGET, return_value=third):
+        assert await hass.config_entries.async_setup(entry.entry_id)
+        await hass.async_block_till_done()
+
+    state = hass.states.get(
+        er.async_get(hass).async_get_entity_id("sensor", DOMAIN, f"{DOMAIN}_NL_current_price")
+    )
+    history = state.attributes["forecast_history"]
+
+    assert len(history) == 3
+    assert history[0]["generated_at"] == first.generated_at.isoformat()
+    assert history[1]["generated_at"] == second.generated_at.isoformat()
+    assert history[2]["generated_at"] == third.generated_at.isoformat()
 
 
 async def test_sensor_state_uses_next_forecast_hour_when_no_exact_match(hass):

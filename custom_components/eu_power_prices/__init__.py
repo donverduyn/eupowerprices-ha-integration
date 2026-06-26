@@ -53,6 +53,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: EuPowerPricesConfigEntry
         client=client,
         update_interval_seconds=update_interval_seconds,
     )
+    await coordinator.async_load_forecast_history()
     await coordinator.async_config_entry_first_refresh()
 
     entry.runtime_data = coordinator

@@ -25,8 +25,8 @@ TIMEOUT_SECONDS = 15
 FORECAST_ATTR_HOURS = 240
 
 # Number of successful fetch snapshots to retain for charting multiple lines
-# over time. Each snapshot contains one future forecast series.
-FORECAST_HISTORY_MAX_SNAPSHOTS = 3
+# over time. Five snapshots supports current forecast + four older overlays.
+FORECAST_HISTORY_MAX_SNAPSHOTS = 5
 
 # Known ENTSO-E style bidding-zone codes offered in the config flow dropdown.
 # Not exhaustive (see requirements doc §4.1 - no confirmed /v1/areas endpoint

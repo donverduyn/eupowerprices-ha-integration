@@ -19,7 +19,7 @@ Per configured market area, one device with one entity:
   `EUR/MWh`) for the current local hour.
   - Attribute `forecast`: the next 10 days as `{ts_local, price}` pairs —
     enough to drive a forecast chart card.
-  - Attribute `forecast_history`: the last 24 successful fetches, each with a
+  - Attribute `forecast_history`: the last 5 successful fetches, each with a
     full future forecast series. This is useful for charts that overlay a new
     line on every poll and fade older lines out.
   - Attributes `generated_at`, `currency`, `area`.
@@ -82,6 +82,8 @@ If you want to overlay multiple forecast lines, use `forecast_history` and
 map each snapshot to its own series. Each history item includes
 `generated_at`, `series`, `timezone`, `currency`, and `area`.
 
+The example below renders the latest line plus 4 earlier snapshots.
+
 ```yaml
 type: custom:apexcharts-card
 header:
@@ -91,7 +93,7 @@ graph_span: 10d
 span:
   start: day
 series:
-  - entity: sensor.nl_current_price
+  - entity: sensor.eu_power_prices_nl_current_price
     name: Latest forecast
     type: line
     stroke_width: 3
@@ -101,7 +103,7 @@ series:
         new Date(point.ts_local).getTime(),
         point.price,
       ]);
-  - entity: sensor.nl_current_price
+  - entity: sensor.eu_power_prices_nl_current_price
     name: Previous forecast
     type: line
     stroke_width: 2
@@ -115,7 +117,7 @@ series:
         new Date(point.ts_local).getTime(),
         point.price,
       ]);
-  - entity: sensor.nl_current_price
+  - entity: sensor.eu_power_prices_nl_current_price
     name: Older forecast
     type: line
     stroke_width: 1
@@ -129,12 +131,40 @@ series:
         new Date(point.ts_local).getTime(),
         point.price,
       ]);
+  - entity: sensor.eu_power_prices_nl_current_price
+    name: Even older forecast
+    type: line
+    stroke_width: 1
+    opacity: 0.08
+    data_generator: |
+      const history = entity.attributes.forecast_history ?? [];
+      const snapshot = history.at(-4);
+      if (!snapshot) return [];
+
+      return snapshot.series.map(point => [
+        new Date(point.ts_local).getTime(),
+        point.price,
+      ]);
+  - entity: sensor.eu_power_prices_nl_current_price
+    name: Oldest kept forecast
+    type: line
+    stroke_width: 1
+    opacity: 0.05
+    data_generator: |
+      const history = entity.attributes.forecast_history ?? [];
+      const snapshot = history.at(-5);
+      if (!snapshot) return [];
+
+      return snapshot.series.map(point => [
+        new Date(point.ts_local).getTime(),
+        point.price,
+      ]);
+
 ```
 
-The `forecast_history` attribute is intentionally bounded, so you can keep the
-last few polls on screen without growing the entity state forever. If you want
-more faded lines, clone the last two series blocks and change the `at(-N)`
-index to match the snapshot you want to display.
+The `forecast_history` attribute is intentionally bounded to 5 snapshots, so
+you can keep the latest line plus 4 older overlays on screen without growing
+the entity state forever.
 
 ## Troubleshooting
 
