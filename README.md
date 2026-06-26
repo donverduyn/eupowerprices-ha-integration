@@ -187,9 +187,12 @@ before submitting.
 ## Release Workflow
 
 To make HACS pick up new versions cleanly, bump the `version` field in
-`custom_components/eu_power_prices/manifest.json`, push the change, then tag
-the release as `vX.Y.Z`. The release workflow in `.github/workflows/release.yaml`
-turns that tag into a GitHub Release, which HACS uses to show versioned updates.
+`custom_components/eu_power_prices/manifest.json` and push to `main`.
+
+The release workflow in `.github/workflows/release.yaml` will automatically
+create or update a GitHub Release for `vX.Y.Z` from the manifest version.
+Tag pushes are still supported, and the workflow validates that the tag
+matches `manifest.json` (`v<manifest version>`).
 
 ## License
 

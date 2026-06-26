@@ -2,6 +2,8 @@ name: Release
 
 on:
   push:
+    branches:
+      - main
     tags:
       - "v*"
   workflow_dispatch:
@@ -14,7 +16,30 @@ jobs:
     name: Create GitHub Release
     runs-on: ubuntu-latest
     steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Resolve release tag
+        id: meta
+        shell: bash
+        run: |
+          if [[ "${GITHUB_REF_TYPE}" == "tag" ]]; then
+            TAG="${GITHUB_REF_NAME}"
+            VERSION_IN_MANIFEST="$(jq -r '.version' custom_components/eu_power_prices/manifest.json)"
+            if [[ "${TAG}" != "v${VERSION_IN_MANIFEST}" ]]; then
+              echo "Tag ${TAG} does not match manifest version v${VERSION_IN_MANIFEST}."
+              exit 1
+            fi
+          else
+            VERSION_IN_MANIFEST="$(jq -r '.version' custom_components/eu_power_prices/manifest.json)"
+            TAG="v${VERSION_IN_MANIFEST}"
+          fi
+
+          echo "tag=${TAG}" >> "${GITHUB_OUTPUT}"
+
       - name: Create release from tag
         uses: softprops/action-gh-release@v2
         with:
+          tag_name: ${{ steps.meta.outputs.tag }}
+          target_commitish: ${{ github.sha }}
           generate_release_notes: true
